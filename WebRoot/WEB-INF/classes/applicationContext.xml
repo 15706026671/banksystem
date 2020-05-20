@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"	
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-3.1.xsd 
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx.xsd	
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+	<bean id="dataSource"
+		class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName"
+			value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/bank?useUnicode=true&amp;characterEncoding=utf8"></property>
+		<property name="username" value="root"></property>
+		<property name="password" value="root"></property>
+	</bean>
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource">
+			<ref bean="dataSource" />
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">
+					org.hibernate.dialect.MySQLDialect
+				</prop>
+			</props>
+		</property>
+		<property name="mappingResources">
+			<list>
+				<value>com/banksystem/entity/TransactionType.hbm.xml</value>
+				<value>com/banksystem/entity/Account.hbm.xml</value>
+				<value>com/banksystem/entity/TransactionLog.hbm.xml</value>
+				<value>com/banksystem/entity/Personinfo.hbm.xml</value>
+				<value>com/banksystem/entity/Status.hbm.xml</value>
+				<value>com/banksystem/entity/Admin.hbm.xml</value></list>
+		</property>
+	</bean>
+	<!--开启注解处理器  -->
+	<context:annotation-config/>
+   
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	
+	<!-- 基于@Transactional注解方式的事务管理 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	
+	<!-- 定义UserDaoImpl，并给类中的sessionFactory属性注入值 -->
+	<bean id="userDao" class="com.banksystem.dao.impl.UserDAOImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	
+	<!-- 定义UserServiceImpl，并给其属性userDao注入实例 -->
+	<bean id="userService" class="com.banksystem.service.impl.UserServiceImpl">
+	   <property name="userDao" ref="userDao"></property>
+	</bean>
+	
+	<!-- 定义PersoninfoDaoImpl，并给类中的sessionFactory属性注入值 -->
+	<bean id="personinfoDao" class="com.banksystem.dao.impl.PersoninfoDAOImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	
+	<!-- 定义PersoninfoServiceImpl，并给其属性personinfoDao和userDao注入Bean实例 -->
+	<bean id="personinfoService" class="com.banksystem.service.impl.PersoninfoServiceImpl">
+		<property name="personinfoDao" ref="personinfoDao"></property>
+		<property name="userDao" ref="userDao"></property>
+	</bean>
+	
+	<!-- 定义TransactionDaoImpl，并给类中的sessionFactory属性注入值 -->
+	<bean id="transactionDao" class="com.banksystem.dao.impl.TransactionDAOImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>	
+	
+	<!-- 定义TransactionServiceImpl，并给其属性transactionDao和userDao注入Bean实例 -->
+	<bean id="transactionService" class="com.banksystem.service.impl.TransactionServiceImpl">
+		<property name="transactionDao" ref="transactionDao"></property>
+		<property name="userDao" ref="userDao"></property>
+	</bean>	
+	
+	<!-- 使用原型模式定义UserAction类，UserAction类的属性通过Annotation注解方式注入 -->
+	<bean name="user" class="com.banksystem.action.UserAction" scope="prototype"/>
+	
+	<bean name="file" class="com.banksystem.action.FileAction" scope="prototype"/>
+	
+	<!-- 使用原型模式定义PersoninfoAction类，PersoninfoAction类的属性通过Annotation注解方式注入 -->
+	<bean name="personinfo" class="com.banksystem.action.PersoninfoAction" scope="prototype"/>
+	
+	<!-- 使用原型模式定义AdminAction类，AdminAction类的属性userService和personinfoService通过Annotation注解方式注入 -->
+	<bean name="admin" class="com.banksystem.action.AdminAction" scope="prototype" />
+	
+	
+	<!-- 使用原型模式定义Transaction类,并给属性 userService和transactionService注入值-->
+    <bean name="transaction" class="com.banksystem.action.Transaction" scope="prototype">
+	    <property name="userService" ref="userService"></property>
+	    <property name="transactionService" ref="transactionService"></property>
+	</bean>
+	
+</beans>
